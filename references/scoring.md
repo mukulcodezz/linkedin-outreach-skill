@@ -49,12 +49,21 @@ Add per `references/triggers.md` (cap total at 10). A strong trigger can push Wa
 | 5-7 | **WARM** | Outreach, medium priority. Nurture only. |
 | 1-4 | **COLD** | Low priority. Nurture only, no pitch. |
 
+## Connector Potential (separate read — always print alongside score)
+Even a COLD direct buyer can be a valuable CONNECTOR if their EMPLOYER fits the ICP (config.md §4).
+- **HIGH** — large ICP-fit employer; plausible path to the real buyer (HR/Admin/Procurement).
+- **MEDIUM** — mid-size or partial ICP fit.
+- **LOW** — small/off-ICP employer, or no visible path to a buyer.
+
+HIGH connector potential → run `references/referrals.md` (nurture first, referral-ask only once warm, never cold).
+
 ## Output Format
 ```
 Prospect: [Name] — [Role] (Tier A/B/C)
 Score: X/10 — HOT | WARM | COLD
 Why: [1 line]
 Decision power: YES | MAYBE | NO
+Connector potential: HIGH | MEDIUM | LOW
 Trigger: [name / none]
 ```
-Always print the Tier. Prioritize Tier A.
+Always print the Tier. Prioritize Tier A. A Cold lead with HIGH connector potential is worth nurturing.

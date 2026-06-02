@@ -1,140 +1,80 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { motion, useReducedMotion, useInView } from "framer-motion";
 import {
-  motion,
-  useReducedMotion,
-  type Variants,
-} from "framer-motion";
-import {
-  REPO_URL,
-  INSTALL_CMD,
-  PIPELINE,
-  MODES,
-  FEATURES,
-  QUICKSTART,
+  REPO_URL, INSTALL_CMD, VERSION,
+  PIPELINE, MODES, FEATURES, STATS, QUICKSTART,
 } from "./data";
 
-/* ----------------------------- icons ----------------------------- */
-function GitHubMark({ className = "" }: { className?: string }) {
+/* ── icons ── */
+function GH({ className = "" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden className={className} fill="currentColor">
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
       <path d="M12 .5C5.7.5.5 5.7.5 12a11.5 11.5 0 0 0 7.9 10.9c.6.1.8-.2.8-.5v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.8 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.6.8.5A11.5 11.5 0 0 0 23.5 12C23.5 5.7 18.3.5 12 .5Z" />
     </svg>
   );
 }
-function ArrowUpRight({ className = "" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 16 16" aria-hidden className={className} fill="none" stroke="currentColor" strokeWidth="1.6">
-      <path d="M4.5 11.5 11.5 4.5M6 4.5h5.5V10" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-function Check({ className = "" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 16 16" aria-hidden className={className} fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="m3.5 8.5 3 3 6-7" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
 
-/* ----------------------------- reveal ----------------------------- */
-function Reveal({
-  children,
-  delay = 0,
-  className = "",
-}: {
-  children: ReactNode;
-  delay?: number;
-  className?: string;
-}) {
+/* ── animation helpers ── */
+function Fade({ children, delay = 0, className = "", y = 28 }: { children: ReactNode; delay?: number; className?: string; y?: number }) {
   const reduce = useReducedMotion();
   return (
     <motion.div
       className={className}
-      initial={reduce ? false : { opacity: 0, y: 26 }}
+      initial={reduce ? false : { opacity: 0, y }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.7, delay, ease: [0.22, 1, 0.36, 1] }}
+      viewport={{ once: true, margin: "-40px" }}
+      transition={{ duration: 0.8, delay, ease: [0.16, 1, 0.3, 1] }}
     >
       {children}
     </motion.div>
   );
 }
 
-/* ----------------------------- copy ----------------------------- */
-function CopyLine({ command, label }: { command: string; label?: string }) {
-  const [copied, setCopied] = useState(false);
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(command);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1600);
-    } catch {
-      setCopied(false);
-    }
+/* ── copy button ── */
+function Copy({ cmd, label }: { cmd: string; label?: string }) {
+  const [ok, setOk] = useState(false);
+  async function go() {
+    try { await navigator.clipboard.writeText(cmd); setOk(true); setTimeout(() => setOk(false), 1800); } catch { /* silent */ }
   }
   return (
-    <div className="group flex items-stretch overflow-hidden rounded-lg border border-ink/15 bg-ink text-paper">
-      <div className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3.5">
-        <span className="select-none font-mono text-flame">$</span>
-        <code className="min-w-0 truncate font-mono text-[13px] leading-none text-paper/90">
-          {label ?? command}
-        </code>
+    <div className="flex overflow-hidden border border-rule-bright" style={{ borderRadius: 0 }}>
+      <div className="flex flex-1 items-center gap-3 overflow-hidden bg-void-2 px-4 py-3.5">
+        <span className="font-mono text-spark select-none">$</span>
+        <code className="font-mono text-[13px] text-bone/80 truncate">{label ?? cmd}</code>
       </div>
       <button
-        onClick={copy}
-        aria-label="Copy command"
-        className="flex shrink-0 items-center gap-1.5 border-l border-paper/15 px-4 font-mono text-[11px] uppercase tracking-widest text-paper/70 transition-colors hover:bg-flame hover:text-paper"
+        onClick={go}
+        className="shrink-0 border-l border-rule-bright bg-void-2 px-5 font-mono text-[11px] uppercase tracking-widest text-bone-dim transition-colors hover:bg-spark hover:text-white"
       >
-        {copied ? <Check className="h-3.5 w-3.5" /> : null}
-        {copied ? "Copied" : "Copy"}
+        {ok ? "✓" : "copy"}
       </button>
     </div>
   );
 }
 
-/* ----------------------------- nav ----------------------------- */
+/* ── nav ── */
 function Nav() {
-  const [scrolled, setScrolled] = useState(false);
+  const [past, setPast] = useState(false);
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    const fn = () => setPast(window.scrollY > 32);
+    fn(); window.addEventListener("scroll", fn, { passive: true });
+    return () => window.removeEventListener("scroll", fn);
   }, []);
   return (
-    <header
-      className={`fixed inset-x-0 top-0 z-50 transition-colors duration-300 ${
-        scrolled ? "border-b border-rule bg-paper/85 backdrop-blur-md" : "border-b border-transparent"
-      }`}
-    >
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5 sm:px-8">
-        <a href="#top" className="flex items-center gap-2.5">
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-flame opacity-60" />
-            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-flame" />
-          </span>
-          <span className="font-mono text-[13px] font-medium tracking-tight text-ink">
-            linkedin-outreach<span className="text-muted">-skill</span>
-          </span>
-        </a>
-        <nav className="flex items-center gap-1 sm:gap-2">
-          <a href="#how" className="hidden rounded-md px-3 py-1.5 text-sm text-ink-soft transition-colors hover:text-flame sm:block">
-            How it works
-          </a>
-          <a href="#features" className="hidden rounded-md px-3 py-1.5 text-sm text-ink-soft transition-colors hover:text-flame sm:block">
-            Features
-          </a>
-          <a href="#install" className="hidden rounded-md px-3 py-1.5 text-sm text-ink-soft transition-colors hover:text-flame sm:block">
-            Install
-          </a>
-          <a
-            href={REPO_URL}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="flex items-center gap-2 rounded-md bg-ink px-3.5 py-1.5 text-sm font-medium text-paper transition-transform hover:-translate-y-0.5"
-          >
-            <GitHubMark className="h-4 w-4" />
-            GitHub
+    <header className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${past ? "bg-void/90 backdrop-blur-md border-b border-rule" : "border-b border-transparent"}`}>
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 sm:px-10">
+        <div className="flex items-center gap-3">
+          <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-spark">LOS</span>
+          <span className="h-4 w-px bg-rule-bright" />
+          <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-bone-dim">{VERSION}</span>
+        </div>
+        <nav className="flex items-center gap-1">
+          {["how", "features", "install"].map(h => (
+            <a key={h} href={`#${h}`} className="hidden px-3 py-1.5 font-mono text-[11px] uppercase tracking-widest text-bone-dim transition-colors hover:text-bone sm:block">{h}</a>
+          ))}
+          <a href={REPO_URL} target="_blank" rel="noreferrer noopener"
+            className="ml-3 flex items-center gap-2 border border-bone/20 px-4 py-2 font-mono text-[11px] uppercase tracking-widest text-bone transition-colors hover:border-spark hover:text-spark">
+            <GH className="h-3.5 w-3.5" /> GitHub
           </a>
         </nav>
       </div>
@@ -142,173 +82,124 @@ function Nav() {
   );
 }
 
-/* ----------------------------- DM cards ----------------------------- */
-function MessageCard({
-  kind,
-  lines,
-}: {
-  kind: "spam" | "nurture";
-  lines: string[];
-}) {
-  const spam = kind === "spam";
+/* ── stat counter ── */
+function StatNum({ n }: { n: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true });
   return (
-    <div
-      className={`relative rounded-xl border bg-paper p-5 shadow-[0_18px_40px_-24px_rgba(23,18,14,0.5)] ${
-        spam ? "border-flame/30 -rotate-2" : "border-pine/30 rotate-1"
-      }`}
-    >
-      <div className="mb-3 flex items-center justify-between">
-        <span
-          className={`font-mono text-[10px] uppercase tracking-[0.2em] ${
-            spam ? "text-flame" : "text-pine"
-          }`}
-        >
-          {spam ? "✕ the usual pitch" : "✓ what the skill writes"}
-        </span>
-        <span className="h-6 w-6 rounded-full bg-paper-deep" />
-      </div>
-      <div className="space-y-1.5">
-        {lines.map((l, i) => (
-          <p
-            key={i}
-            className={`text-[13.5px] leading-relaxed ${
-              spam ? "text-muted line-through decoration-flame/50" : "text-ink-soft"
-            }`}
-          >
-            {l}
-          </p>
-        ))}
-      </div>
-    </div>
+    <span ref={ref} className={`font-display text-[clamp(3rem,8vw,6rem)] font-bold leading-none text-bone transition-opacity duration-700 ${inView ? "opacity-100" : "opacity-0"}`}>
+      {n}
+    </span>
   );
 }
 
-/* ----------------------------- sections ----------------------------- */
-const stagger: Variants = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
-};
-const item: Variants = {
-  hidden: { opacity: 0, y: 22 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } },
-};
-
+/* ── hero ── */
 function Hero() {
   const reduce = useReducedMotion();
-  const floatRef = useRef<HTMLDivElement>(null);
   return (
-    <section id="top" className="relative px-5 pt-32 pb-16 sm:px-8 sm:pt-40">
-      <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]">
-        <motion.div variants={stagger} initial={reduce ? undefined : "hidden"} animate="show">
-          <motion.div variants={item} className="mb-6 inline-flex items-center gap-2.5 rounded-full border border-rule bg-paper px-3.5 py-1.5">
-            <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
-              Claude Agent Skill
+    <section id="top" className="relative min-h-screen border-b border-rule">
+      {/* large background label */}
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden select-none">
+        <span className="font-display text-[clamp(6rem,20vw,18rem)] font-bold leading-none text-white/[0.025] tracking-tighter">LOS</span>
+      </div>
+
+      <div className="relative mx-auto grid max-w-7xl px-6 pt-36 pb-20 sm:px-10 lg:grid-cols-[1fr_1fr] lg:items-end lg:gap-20 lg:pt-48 lg:pb-28">
+        {/* left */}
+        <div>
+          <motion.div
+            initial={reduce ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4 }}
+            className="mb-8 inline-flex items-center gap-3 border border-rule-bright px-3 py-1.5"
+          >
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-spark opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-spark" />
             </span>
-            <span className="h-1 w-1 rounded-full bg-flame" />
-            <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">MIT</span>
+            <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-bone-dim">Claude Agent Skill · Open Source</span>
           </motion.div>
 
           <motion.h1
-            variants={item}
-            className="font-display text-[clamp(2.6rem,6vw,4.6rem)] font-semibold leading-[0.98] tracking-[-0.02em] text-balance"
+            initial={reduce ? false : { opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+            className="font-display text-[clamp(2.8rem,6.5vw,5.5rem)] font-bold leading-[0.95] tracking-[-0.03em]"
           >
-            Outreach that thinks like a{" "}
-            <span className="relative whitespace-nowrap text-flame">
-              networker
-              <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 200 12" preserveAspectRatio="none" aria-hidden>
-                <path d="M2 8c40-6 120-6 196 0" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-              </svg>
-            </span>
-            , not a spam bot.
+            LinkedIn<br />
+            Outreach<br />
+            <span className="text-spark">Skill.</span>
           </motion.h1>
 
-          <motion.p variants={item} className="mt-7 max-w-xl text-[1.06rem] leading-relaxed text-ink-soft">
-            A config-driven skill that turns a LinkedIn profile screenshot into a
-            personalized, scored, <em className="not-italic text-ink">nurture-first</em> message.
-            Fill one file with your business — it works for any industry.
+          <motion.p
+            initial={reduce ? false : { opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className="mt-8 max-w-lg text-[1.05rem] leading-relaxed text-bone-dim"
+          >
+            A config-driven Claude Agent Skill that turns a LinkedIn profile screenshot
+            into scored, personalized, nurture-first outreach.
+            Fill one file. Works for any business, any industry.
           </motion.p>
 
-          <motion.div variants={item} className="mt-7 flex flex-wrap items-center gap-x-3 gap-y-2 font-mono text-[12px] sm:text-[13px]">
-            <span className="font-semibold text-ink">Reply Rate</span>
-            <span className="text-flame">›</span>
-            <span className="text-ink-soft">Meetings</span>
-            <span className="text-flame">›</span>
-            <span className="text-ink-soft">Sales</span>
-            <span className="text-flame">›</span>
-            <span className="text-muted line-through">Messages Sent</span>
+          <motion.div
+            initial={reduce ? false : { opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.45, ease: [0.16, 1, 0.3, 1] }}
+            className="mt-6 flex flex-wrap items-center gap-2 font-mono text-[12px] uppercase tracking-widest"
+          >
+            <span className="text-spark font-bold">Reply Rate</span>
+            <span className="text-bone-dim">›</span>
+            <span className="text-bone/60">Meetings</span>
+            <span className="text-bone-dim">›</span>
+            <span className="text-bone/60">Sales</span>
+            <span className="text-bone-dim">›</span>
+            <span className="text-bone/40 line-through">Messages Sent</span>
           </motion.div>
 
-          <motion.div variants={item} className="mt-9 flex flex-wrap items-center gap-3">
-            <a
-              href={REPO_URL}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="group inline-flex items-center gap-2 rounded-lg bg-flame px-5 py-3 text-sm font-semibold text-paper shadow-[0_14px_30px_-12px_rgba(223,67,34,0.7)] transition-transform hover:-translate-y-0.5"
-            >
-              <GitHubMark className="h-4 w-4" />
-              Get it on GitHub
-              <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+          <motion.div
+            initial={reduce ? false : { opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.55, ease: [0.16, 1, 0.3, 1] }}
+            className="mt-10 flex flex-wrap gap-4"
+          >
+            <a href={REPO_URL} target="_blank" rel="noreferrer noopener"
+              className="group flex items-center gap-2.5 bg-spark px-6 py-3.5 font-mono text-[12px] uppercase tracking-widest text-white transition-all hover:bg-spark-dim">
+              <GH className="h-4 w-4" />
+              Get it free
             </a>
-            <a
-              href="#how"
-              className="inline-flex items-center gap-2 rounded-lg border border-ink/20 px-5 py-3 text-sm font-semibold text-ink transition-colors hover:border-ink/40 hover:bg-paper-deep"
-            >
-              See how it works
+            <a href="#how"
+              className="flex items-center px-6 py-3.5 border border-rule-bright font-mono text-[12px] uppercase tracking-widest text-bone-dim transition-colors hover:border-bone/40 hover:text-bone">
+              How it works ↓
             </a>
           </motion.div>
-        </motion.div>
+        </div>
 
-        {/* before / after */}
-        <motion.div
-          ref={floatRef}
-          initial={reduce ? false : { opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.9, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
-          className="relative mx-auto w-full max-w-md space-y-5 lg:mx-0"
-        >
-          <motion.div
-            animate={reduce ? undefined : { y: [0, -8, 0] }}
-            transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <MessageCard
-              kind="spam"
-              lines={[
-                "Hi, I'm with [Company] — the BEST agency around.",
-                "We offer X, Y and Z. Can we schedule a call?",
-                "Please find our brochure attached. Dear Sir/Madam.",
-              ]}
-            />
-          </motion.div>
-          <motion.div
-            animate={reduce ? undefined : { y: [0, 8, 0] }}
-            transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
-          >
-            <MessageCard
-              kind="nurture"
-              lines={[
-                "Hi Priya, thanks for connecting.",
-                "Running people ops for a team scaling this fast is no small job.",
-                "Always good to know HR leaders navigating it — let's stay in touch.",
-              ]}
-            />
-          </motion.div>
-        </motion.div>
+        {/* right — stat grid */}
+        <div className="mt-16 grid grid-cols-2 gap-px border border-rule lg:mt-0">
+          {STATS.map((s) => (
+            <div key={s.label} className="bg-void-2 p-8">
+              <StatNum n={s.n} />
+              <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.2em] text-bone-dim">{s.label}</p>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );
 }
 
-function Marquee() {
-  const words = ["Read", "Classify", "Score", "Nurture", "Follow up", "Reply", "Comment", "Track"];
+/* ── ticker ── */
+function Ticker() {
+  const words = ["Score", "Classify", "Nurture", "Follow Up", "Reply", "Comment", "Connect", "Close", "Track", "Refer"];
   return (
-    <div className="border-y border-ink bg-ink py-3 text-paper">
-      <div className="marquee-track">
-        {[0, 1].map((dup) => (
-          <div key={dup} className="flex items-center" aria-hidden={dup === 1}>
-            {words.map((w) => (
-              <span key={w + dup} className="flex items-center font-mono text-[12px] uppercase tracking-[0.2em]">
-                <span className="px-6 text-paper/80">{w}</span>
-                <span className="text-flame">✶</span>
+    <div className="overflow-hidden border-b border-rule bg-void-2 py-3.5">
+      <div className="ticker-track">
+        {[0, 1].map(d => (
+          <div key={d} className="flex items-center" aria-hidden={d === 1}>
+            {words.map(w => (
+              <span key={w + d} className="flex items-center font-mono text-[11px] uppercase tracking-[0.25em]">
+                <span className="px-7 text-bone-dim">{w}</span>
+                <span className="text-spark">◆</span>
               </span>
             ))}
           </div>
@@ -318,88 +209,28 @@ function Marquee() {
   );
 }
 
+/* ── pipeline ── */
 function Pipeline() {
   return (
-    <section className="px-5 py-24 sm:px-8" id="what">
-      <div className="mx-auto max-w-6xl">
-        <Reveal className="mb-14 max-w-2xl">
-          <p className="mb-3 font-mono text-[12px] uppercase tracking-[0.22em] text-flame">What it does</p>
-          <h2 className="font-display text-[clamp(2rem,4vw,3rem)] font-semibold leading-tight tracking-[-0.01em]">
-            Eight moves, one screenshot.
-          </h2>
-        </Reveal>
-        <div className="grid gap-px overflow-hidden rounded-2xl border border-rule bg-rule sm:grid-cols-2 lg:grid-cols-4">
-          {PIPELINE.map((s, i) => (
-            <Reveal key={s.n} delay={(i % 4) * 0.06} className="bg-paper">
-              <div className="group h-full p-6 transition-colors hover:bg-paper-deep">
-                <div className="mb-5 flex items-baseline justify-between">
-                  <span className="font-mono text-[12px] text-muted">{s.n}</span>
-                  <span className="h-1.5 w-1.5 rounded-full bg-rule transition-colors group-hover:bg-flame" />
-                </div>
-                <h3 className="font-display text-xl font-semibold leading-snug">{s.title}</h3>
-                <p className="mt-2.5 text-[14px] leading-relaxed text-muted">{s.body}</p>
-              </div>
-            </Reveal>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Modes() {
-  return (
-    <section className="bg-ink px-5 py-24 text-paper sm:px-8" id="how">
-      <div className="mx-auto max-w-6xl">
-        <Reveal className="mb-14 max-w-2xl">
-          <p className="mb-3 font-mono text-[12px] uppercase tracking-[0.22em] text-flame">How it works</p>
-          <h2 className="font-display text-[clamp(2rem,4vw,3rem)] font-semibold leading-tight tracking-[-0.01em] text-paper">
-            Four modes. It reads the room and picks one.
-          </h2>
-        </Reveal>
-        <div className="grid gap-5 sm:grid-cols-2">
-          {MODES.map((m, i) => (
-            <Reveal key={m.tag} delay={(i % 2) * 0.08}>
-              <div className="group relative h-full overflow-hidden rounded-2xl border border-paper/15 bg-paper/[0.03] p-7 transition-colors hover:border-flame/40">
-                <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-flame/10 blur-2xl transition-opacity group-hover:opacity-100" />
-                <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-flame">{m.tag}</span>
-                <h3 className="mt-3 font-display text-2xl font-semibold text-paper">{m.title}</h3>
-                <p className="mt-4 inline-flex rounded-md bg-paper/10 px-2.5 py-1 font-mono text-[12px] text-paper/75">
-                  {m.trigger}
-                </p>
-                <p className="mt-4 text-[14.5px] leading-relaxed text-paper/65">{m.body}</p>
-              </div>
-            </Reveal>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Features() {
-  return (
-    <section className="px-5 py-24 sm:px-8" id="features">
-      <div className="mx-auto max-w-6xl">
-        <Reveal className="mb-14 flex flex-wrap items-end justify-between gap-6">
-          <div className="max-w-2xl">
-            <p className="mb-3 font-mono text-[12px] uppercase tracking-[0.22em] text-flame">Why it's different</p>
-            <h2 className="font-display text-[clamp(2rem,4vw,3rem)] font-semibold leading-tight tracking-[-0.01em]">
-              Built to start conversations, not blast messages.
+    <section className="border-b border-rule" id="how">
+      <div className="mx-auto max-w-7xl px-6 py-20 sm:px-10">
+        <Fade className="mb-16 flex items-end justify-between gap-8 border-b border-rule pb-8">
+          <div>
+            <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.25em] text-spark">What it does</p>
+            <h2 className="font-display text-[clamp(2rem,4vw,3.2rem)] font-bold leading-tight tracking-[-0.02em]">
+              Eight moves.<br />One screenshot.
             </h2>
           </div>
-        </Reveal>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map((f, i) => (
-            <Reveal key={f.title} delay={(i % 3) * 0.06}>
-              <div className="group h-full rounded-2xl border border-rule bg-paper p-6 transition-all hover:-translate-y-1 hover:border-ink/25 hover:shadow-[0_24px_50px_-30px_rgba(23,18,14,0.5)]">
-                <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-lg bg-ink text-paper transition-colors group-hover:bg-flame">
-                  <Check className="h-5 w-5" />
-                </div>
-                <h3 className="font-display text-lg font-semibold">{f.title}</h3>
-                <p className="mt-2 text-[14px] leading-relaxed text-muted">{f.body}</p>
+        </Fade>
+        <div className="grid grid-cols-2 gap-px border border-rule bg-rule md:grid-cols-4">
+          {PIPELINE.map((s, i) => (
+            <Fade key={s.n} delay={(i % 4) * 0.05} className="bg-void-2">
+              <div className="group h-full p-7 transition-colors hover:bg-void-3">
+                <p className="mb-6 font-mono text-[11px] text-spark">{s.n}</p>
+                <h3 className="font-display text-xl font-bold leading-snug text-bone">{s.title}</h3>
+                <p className="mt-3 text-[13.5px] leading-relaxed text-bone-dim">{s.body}</p>
               </div>
-            </Reveal>
+            </Fade>
           ))}
         </div>
       </div>
@@ -407,106 +238,238 @@ function Features() {
   );
 }
 
-function Install() {
+/* ── modes ── */
+function Modes() {
   return (
-    <section className="px-5 py-24 sm:px-8" id="install">
-      <div className="mx-auto max-w-6xl">
-        <div className="overflow-hidden rounded-3xl border border-rule bg-paper-deep">
-          <div className="grid lg:grid-cols-[0.9fr_1.1fr]">
-            <Reveal className="border-b border-rule p-9 sm:p-11 lg:border-b-0 lg:border-r">
-              <p className="mb-3 font-mono text-[12px] uppercase tracking-[0.22em] text-flame">Quick start</p>
-              <h2 className="font-display text-[clamp(1.9rem,3.2vw,2.7rem)] font-semibold leading-tight tracking-[-0.01em]">
-                Running in three steps.
-              </h2>
-              <ol className="mt-9 space-y-7">
-                {QUICKSTART.map((s) => (
-                  <li key={s.n} className="flex gap-4">
-                    <span className="font-mono text-[13px] text-flame">{s.n}</span>
-                    <div>
-                      <h3 className="font-display text-lg font-semibold leading-snug">{s.title}</h3>
-                      <p className="mt-1 text-[14px] leading-relaxed text-muted">{s.body}</p>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            </Reveal>
-
-            <Reveal delay={0.1} className="p-9 sm:p-11">
-              <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.2em] text-muted">1 — clone</p>
-              <CopyLine
-                command={INSTALL_CMD}
-                label="git clone …/linkedin-outreach-skill ~/.claude/skills/linkedin-outreach"
-              />
-              <p className="mb-3 mt-7 font-mono text-[11px] uppercase tracking-[0.2em] text-muted">2 — fill</p>
-              <div className="rounded-lg border border-ink/15 bg-ink p-4 font-mono text-[12.5px] leading-relaxed text-paper/85">
-                <span className="text-flame"># config.md</span>
-                <br />
-                company: <span className="text-paper">Your Co.</span>
-                <br />
-                offer: <span className="text-paper">outcome, not feature</span>
-                <br />
-                tiers: <span className="text-paper">who owns the decision</span>
-                <br />
-                voice: <span className="text-paper">how you sound</span>
+    <section className="border-b border-rule bg-void-2">
+      <div className="mx-auto max-w-7xl px-6 py-20 sm:px-10">
+        <Fade className="mb-16 border-b border-rule pb-8">
+          <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.25em] text-spark">Five modes</p>
+          <h2 className="font-display text-[clamp(2rem,4vw,3.2rem)] font-bold leading-tight tracking-[-0.02em]">
+            It reads the room.<br />Picks the right move.
+          </h2>
+        </Fade>
+        <div className="grid gap-px border border-rule bg-rule sm:grid-cols-2 lg:grid-cols-5">
+          {MODES.map((m, i) => (
+            <Fade key={m.tag} delay={i * 0.06} className="bg-void-2">
+              <div className="group h-full p-7 transition-colors hover:bg-void-3">
+                <div className="mb-5 flex items-center justify-between">
+                  <span className="font-mono text-[11px] text-spark">{m.tag}</span>
+                  <span className="font-mono text-[10px] uppercase tracking-widest text-bone-dim opacity-0 transition-opacity group-hover:opacity-100">active</span>
+                </div>
+                <h3 className="font-display text-lg font-bold text-bone">{m.title}</h3>
+                <p className="my-3 border-l-2 border-spark pl-3 font-mono text-[11px] text-bone-dim">{m.trigger}</p>
+                <p className="text-[13px] leading-relaxed text-bone-dim">{m.body}</p>
               </div>
-              <p className="mb-3 mt-7 font-mono text-[11px] uppercase tracking-[0.2em] text-muted">3 — run</p>
-              <div className="flex items-center gap-3 rounded-lg border border-pine/30 bg-pine/10 px-4 py-3.5">
-                <Check className="h-4 w-4 shrink-0 text-pine" />
-                <p className="text-[13.5px] text-ink-soft">
-                  Paste a profile screenshot → score + drafts come back.
-                </p>
-              </div>
-            </Reveal>
-          </div>
+            </Fade>
+          ))}
         </div>
       </div>
     </section>
   );
 }
 
+/* ── before / after ── */
+function BeforeAfter() {
+  const reduce = useReducedMotion();
+  return (
+    <section className="border-b border-rule">
+      <div className="mx-auto max-w-7xl px-6 py-20 sm:px-10">
+        <Fade className="mb-16 border-b border-rule pb-8">
+          <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.25em] text-spark">The difference</p>
+          <h2 className="font-display text-[clamp(2rem,4vw,3.2rem)] font-bold leading-tight tracking-[-0.02em]">
+            Not a spam cannon.<br />A conversation starter.
+          </h2>
+        </Fade>
+        <div className="grid gap-8 lg:grid-cols-2 lg:gap-px lg:border lg:border-rule lg:bg-rule">
+          {/* bad */}
+          <Fade className="lg:bg-void-2" delay={0}>
+            <div className="h-full p-8 lg:p-10">
+              <p className="mb-6 font-mono text-[11px] uppercase tracking-[0.2em] text-bone/40 line-through">The usual</p>
+              <div className="space-y-3">
+                {[
+                  "Hi, we are the BEST travel agency in India.",
+                  "We offer corporate travel, MICE, and holiday packages.",
+                  "Please find the brochure attached. Can we schedule a call?",
+                  "Dear Sir/Madam, looking forward to your kind revert.",
+                ].map((l, i) => (
+                  <motion.p
+                    key={i}
+                    initial={reduce ? false : { opacity: 0, x: -8 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.07, duration: 0.5 }}
+                    className="font-body text-[14px] leading-relaxed text-bone/30 line-through decoration-spark/40"
+                  >
+                    {l}
+                  </motion.p>
+                ))}
+              </div>
+            </div>
+          </Fade>
+          {/* good */}
+          <Fade className="border border-spark/20 bg-void-2 lg:border-none lg:bg-void-2" delay={0.15}>
+            <div className="h-full p-8 lg:p-10">
+              <p className="mb-6 font-mono text-[11px] uppercase tracking-[0.2em] text-spark">What the skill writes</p>
+              <div className="space-y-4">
+                {[
+                  { bold: "Hi Priya,", rest: " hope you're keeping well." },
+                  { bold: "", rest: "Managing a team that's scaling this fast, coordinating travel, offsites, and events must be a significant lift." },
+                  { bold: "", rest: "Always good to connect with HR leaders navigating that. Looking forward to staying in touch." },
+                ].map((l, i) => (
+                  <motion.p
+                    key={i}
+                    initial={reduce ? false : { opacity: 0, x: 8 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.1 + 0.15, duration: 0.5 }}
+                    className="text-[14.5px] leading-relaxed text-bone/80"
+                  >
+                    {l.bold && <strong className="text-bone">{l.bold}</strong>}
+                    {l.rest}
+                  </motion.p>
+                ))}
+                <motion.p
+                  initial={reduce ? false : { opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.5, duration: 0.6 }}
+                  className="font-mono text-[11px] uppercase tracking-widest text-spark"
+                >
+                  ✓ 95 words · no pitch · no links · no "best agency"
+                </motion.p>
+              </div>
+            </div>
+          </Fade>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ── features ── */
+function Features() {
+  return (
+    <section className="border-b border-rule bg-void-2" id="features">
+      <div className="mx-auto max-w-7xl px-6 py-20 sm:px-10">
+        <Fade className="mb-16 border-b border-rule pb-8">
+          <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.25em] text-spark">Why it's different</p>
+          <h2 className="font-display text-[clamp(2rem,4vw,3.2rem)] font-bold leading-tight tracking-[-0.02em]">
+            Built to start<br />conversations.
+          </h2>
+        </Fade>
+        <div className="grid gap-px border border-rule bg-rule sm:grid-cols-2 lg:grid-cols-3">
+          {FEATURES.map((f, i) => (
+            <Fade key={f.title} delay={(i % 3) * 0.06} className="bg-void-2">
+              <div className="group h-full p-7 transition-colors hover:bg-void-3">
+                <span className="mb-5 block font-mono text-[18px] text-spark">{f.icon}</span>
+                <h3 className="font-display text-lg font-bold text-bone">{f.title}</h3>
+                <p className="mt-2.5 text-[13.5px] leading-relaxed text-bone-dim">{f.body}</p>
+              </div>
+            </Fade>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ── install ── */
+function Install() {
+  return (
+    <section className="border-b border-rule" id="install">
+      <div className="mx-auto max-w-7xl px-6 py-20 sm:px-10">
+        <Fade className="mb-16 border-b border-rule pb-8">
+          <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.25em] text-spark">Quick start</p>
+          <h2 className="font-display text-[clamp(2rem,4vw,3.2rem)] font-bold leading-tight tracking-[-0.02em]">
+            Three steps.<br />Then you're live.
+          </h2>
+        </Fade>
+        <div className="grid gap-12 lg:grid-cols-2 lg:gap-20">
+          <div className="space-y-10">
+            {QUICKSTART.map((s, i) => (
+              <Fade key={s.n} delay={i * 0.08}>
+                <div className="flex gap-6">
+                  <span className="shrink-0 font-mono text-[13px] text-spark">{s.n}</span>
+                  <div>
+                    <h3 className="font-display text-xl font-bold text-bone">{s.title}</h3>
+                    <p className="mt-1.5 text-[14px] leading-relaxed text-bone-dim">{s.body}</p>
+                  </div>
+                </div>
+              </Fade>
+            ))}
+          </div>
+          <Fade delay={0.12}>
+            <div className="space-y-6">
+              <div>
+                <p className="mb-2.5 font-mono text-[10px] uppercase tracking-[0.25em] text-bone-dim">Clone</p>
+                <Copy
+                  cmd={INSTALL_CMD}
+                  label="git clone …/linkedin-outreach-skill ~/.claude/skills/linkedin-outreach"
+                />
+              </div>
+              <div>
+                <p className="mb-2.5 font-mono text-[10px] uppercase tracking-[0.25em] text-bone-dim">Fill config.md</p>
+                <div className="border border-rule-bright bg-void-2 p-5 font-mono text-[13px] leading-loose text-bone/70">
+                  <span className="text-spark"># company</span><br />
+                  name: <span className="text-bone">Your Co.</span><br />
+                  offer: <span className="text-bone">outcome, not a feature</span><br />
+                  <span className="text-spark"># icp</span><br />
+                  tiers: <span className="text-bone">who owns the decision</span><br />
+                  voice: <span className="text-bone">how you sound</span><br />
+                  handoff: <span className="text-bone">WhatsApp / call / email</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 border border-rule-bright px-4 py-3.5">
+                <span className="font-mono text-spark">✓</span>
+                <p className="font-mono text-[12px] text-bone-dim">Paste a profile screenshot → score + DM drafts appear.</p>
+              </div>
+            </div>
+          </Fade>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ── footer ── */
 function Footer() {
   return (
-    <footer className="border-t border-rule px-5 py-14 sm:px-8">
-      <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-8 sm:flex-row sm:items-center">
+    <footer className="bg-void-2">
+      <div className="mx-auto flex max-w-7xl flex-col gap-10 px-6 py-16 sm:flex-row sm:items-end sm:justify-between sm:px-10">
         <div>
-          <div className="flex items-center gap-2.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-flame" />
-            <span className="font-mono text-[13px] font-medium">linkedin-outreach-skill</span>
-          </div>
-          <p className="mt-3 max-w-sm text-[13px] leading-relaxed text-muted">
-            Not affiliated with LinkedIn. Use it for genuine, low-volume, personalized
-            outreach — respect the platform's terms.
+          <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-spark">LinkedIn Outreach Skill</p>
+          <p className="mt-3 max-w-sm text-[13px] leading-relaxed text-bone-dim">
+            Not affiliated with LinkedIn. Use for genuine, low-volume, personalized outreach.
+            Respect the platform's terms.
           </p>
+          <p className="mt-4 font-mono text-[10px] uppercase tracking-widest text-bone/30">MIT · {VERSION} · built with Claude</p>
         </div>
-        <div className="flex flex-col items-start gap-3 sm:items-end">
-          <a
-            href={REPO_URL}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="group inline-flex items-center gap-2 rounded-lg border border-ink/20 px-4 py-2.5 text-sm font-medium transition-colors hover:border-ink/40 hover:bg-paper-deep"
-          >
-            <GitHubMark className="h-4 w-4" />
-            Star on GitHub
-            <ArrowUpRight className="h-3.5 w-3.5 text-muted transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-          </a>
-          <p className="font-mono text-[11px] text-muted">
-            MIT © 2026 · built with Claude
-          </p>
-        </div>
+        <a
+          href={REPO_URL}
+          target="_blank"
+          rel="noreferrer noopener"
+          className="self-start flex items-center gap-2.5 border border-rule-bright px-5 py-3 font-mono text-[11px] uppercase tracking-widest text-bone-dim transition-colors hover:border-spark hover:text-spark sm:self-auto"
+        >
+          <GH className="h-4 w-4" />
+          Star on GitHub
+        </a>
       </div>
     </footer>
   );
 }
 
+/* ── root ── */
 export default function App() {
   return (
-    <div className="grain relative min-h-screen">
+    <div className="relative min-h-screen">
       <Nav />
       <main>
         <Hero />
-        <Marquee />
+        <Ticker />
         <Pipeline />
         <Modes />
+        <BeforeAfter />
         <Features />
         <Install />
       </main>

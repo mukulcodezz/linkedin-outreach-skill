@@ -17,7 +17,19 @@
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
+/* ── light theme overrides ── */
+[data-theme="light"] {
+  --color-void: #f6f0e8;
+  --color-void-2: #ede7de;
+  --color-void-3: #e3ddd4;
+  --color-bone: #1a1512;
+  --color-bone-dim: #7a7269;
+  --color-rule: #d5cfc7;
+  --color-rule-bright: #c5bfb7;
+}
+
 :root { color-scheme: dark; }
+[data-theme="light"] { color-scheme: light; }
 
 html { scroll-behavior: smooth; }
 
@@ -48,6 +60,20 @@ body {
   );
 }
 
+[data-theme="light"] .slash-bg {
+  background-image: repeating-linear-gradient(
+    -55deg,
+    transparent,
+    transparent 14px,
+    rgba(0,0,0,0.03) 14px,
+    rgba(0,0,0,0.03) 15px
+  );
+}
+
+/* Ghost background text — white on dark, dark on cream */
+.ghost-text { color: rgba(255,255,255,0.025); }
+[data-theme="light"] .ghost-text { color: rgba(0,0,0,0.05); }
+
 /* Ticker */
 @keyframes ticker {
   from { transform: translateX(0); }
@@ -65,7 +91,25 @@ body {
   to   { opacity:1; transform: translateY(0); }
 }
 
+/* Smooth theme transition — only active during the switch (300ms window) */
+html.theme-transitioning,
+html.theme-transitioning *,
+html.theme-transitioning *::before,
+html.theme-transitioning *::after {
+  transition:
+    color 0.35s ease,
+    background-color 0.35s ease,
+    border-color 0.35s ease !important;
+  transition-delay: 0s !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ticker-track { animation: none; }
   html { scroll-behavior: auto; }
+  html.theme-transitioning,
+  html.theme-transitioning *,
+  html.theme-transitioning *::before,
+  html.theme-transitioning *::after {
+    transition: none !important;
+  }
 }

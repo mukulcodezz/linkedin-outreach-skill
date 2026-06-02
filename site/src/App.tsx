@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { motion, useReducedMotion, useInView } from "framer-motion";
+import { motion, useReducedMotion, useInView, AnimatePresence } from "framer-motion";
 import {
   REPO_URL, INSTALL_CMD, VERSION,
   PIPELINE, MODES, FEATURES, STATS, QUICKSTART,
@@ -11,6 +11,94 @@ function GH({ className = "" }: { className?: string }) {
     <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
       <path d="M12 .5C5.7.5.5 5.7.5 12a11.5 11.5 0 0 0 7.9 10.9c.6.1.8-.2.8-.5v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.8 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.6.8.5A11.5 11.5 0 0 0 23.5 12C23.5 5.7 18.3.5 12 .5Z" />
     </svg>
+  );
+}
+
+function SunIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden>
+      <circle cx="8" cy="8" r="3" />
+      <line x1="8" y1="1" x2="8" y2="3.5" />
+      <line x1="8" y1="12.5" x2="8" y2="15" />
+      <line x1="1" y1="8" x2="3.5" y2="8" />
+      <line x1="12.5" y1="8" x2="15" y2="8" />
+      <line x1="3.05" y1="3.05" x2="4.81" y2="4.81" />
+      <line x1="11.19" y1="11.19" x2="12.95" y2="12.95" />
+      <line x1="12.95" y1="3.05" x2="11.19" y2="4.81" />
+      <line x1="4.81" y1="11.19" x2="3.05" y2="12.95" />
+    </svg>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
+      <path d="M13.5 10.5A6 6 0 0 1 5.5 2.5a6 6 0 1 0 8 8z" />
+    </svg>
+  );
+}
+
+/* ── theme ── */
+function useTheme() {
+  const [dark, setDark] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem("los-theme");
+      if (stored) return stored === "dark";
+    } catch { /* ignore */ }
+    return window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? true;
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.theme = dark ? "dark" : "light";
+    root.style.colorScheme = dark ? "dark" : "light";
+    try { localStorage.setItem("los-theme", dark ? "dark" : "light"); } catch { /* ignore */ }
+  }, [dark]);
+
+  const toggle = () => {
+    document.documentElement.classList.add("theme-transitioning");
+    setDark(d => !d);
+    setTimeout(() => document.documentElement.classList.remove("theme-transitioning"), 400);
+  };
+
+  return { dark, toggle };
+}
+
+function ThemeToggle({ dark, onToggle }: { dark: boolean; onToggle: () => void }) {
+  return (
+    <motion.button
+      onClick={onToggle}
+      whileTap={{ scale: 0.88 }}
+      className="relative flex h-8 w-8 items-center justify-center border border-rule-bright text-bone-dim hover:border-spark hover:text-spark transition-colors"
+      aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+      title={dark ? "Switch to light mode" : "Switch to dark mode"}
+    >
+      <AnimatePresence mode="wait" initial={false}>
+        {dark ? (
+          <motion.span
+            key="sun"
+            initial={{ opacity: 0, rotate: -60, scale: 0.6 }}
+            animate={{ opacity: 1, rotate: 0, scale: 1 }}
+            exit={{ opacity: 0, rotate: 60, scale: 0.6 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="absolute flex items-center justify-center"
+          >
+            <SunIcon />
+          </motion.span>
+        ) : (
+          <motion.span
+            key="moon"
+            initial={{ opacity: 0, rotate: 60, scale: 0.6 }}
+            animate={{ opacity: 1, rotate: 0, scale: 1 }}
+            exit={{ opacity: 0, rotate: -60, scale: 0.6 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="absolute flex items-center justify-center"
+          >
+            <MoonIcon />
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </motion.button>
   );
 }
 
@@ -53,7 +141,7 @@ function Copy({ cmd, label }: { cmd: string; label?: string }) {
 }
 
 /* ── nav ── */
-function Nav() {
+function Nav({ dark, onToggle }: { dark: boolean; onToggle: () => void }) {
   const [past, setPast] = useState(false);
   useEffect(() => {
     const fn = () => setPast(window.scrollY > 32);
@@ -72,10 +160,13 @@ function Nav() {
           {["how", "features", "install"].map(h => (
             <a key={h} href={`#${h}`} className="hidden px-3 py-1.5 font-mono text-[11px] uppercase tracking-widest text-bone-dim transition-colors hover:text-bone sm:block">{h}</a>
           ))}
-          <a href={REPO_URL} target="_blank" rel="noreferrer noopener"
-            className="ml-3 flex items-center gap-2 border border-bone/20 px-4 py-2 font-mono text-[11px] uppercase tracking-widest text-bone transition-colors hover:border-spark hover:text-spark">
-            <GH className="h-3.5 w-3.5" /> GitHub
-          </a>
+          <div className="ml-3 flex items-center gap-2">
+            <ThemeToggle dark={dark} onToggle={onToggle} />
+            <a href={REPO_URL} target="_blank" rel="noreferrer noopener"
+              className="flex items-center gap-2 border border-bone/20 px-4 py-2 font-mono text-[11px] uppercase tracking-widest text-bone transition-colors hover:border-spark hover:text-spark">
+              <GH className="h-3.5 w-3.5" /> GitHub
+            </a>
+          </div>
         </nav>
       </div>
     </header>
@@ -98,13 +189,11 @@ function Hero() {
   const reduce = useReducedMotion();
   return (
     <section id="top" className="relative min-h-screen border-b border-rule">
-      {/* large background label */}
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden select-none">
-        <span className="font-display text-[clamp(6rem,20vw,18rem)] font-bold leading-none text-white/[0.025] tracking-tighter">LOS</span>
+        <span className="ghost-text font-display text-[clamp(6rem,20vw,18rem)] font-bold leading-none tracking-tighter">LOS</span>
       </div>
 
       <div className="relative mx-auto grid max-w-7xl px-6 pt-36 pb-20 sm:px-10 lg:grid-cols-[1fr_1fr] lg:items-end lg:gap-20 lg:pt-48 lg:pb-28">
-        {/* left */}
         <div>
           <motion.div
             initial={reduce ? false : { opacity: 0 }}
@@ -174,7 +263,6 @@ function Hero() {
           </motion.div>
         </div>
 
-        {/* right — stat grid */}
         <div className="mt-16 grid grid-cols-2 gap-px border border-rule lg:mt-0">
           {STATS.map((s) => (
             <div key={s.label} className="bg-void-2 p-8">
@@ -282,7 +370,6 @@ function BeforeAfter() {
           </h2>
         </Fade>
         <div className="grid gap-8 lg:grid-cols-2 lg:gap-px lg:border lg:border-rule lg:bg-rule">
-          {/* bad */}
           <Fade className="lg:bg-void-2" delay={0}>
             <div className="h-full p-8 lg:p-10">
               <p className="mb-6 font-mono text-[11px] uppercase tracking-[0.2em] text-bone/40 line-through">The usual</p>
@@ -307,7 +394,6 @@ function BeforeAfter() {
               </div>
             </div>
           </Fade>
-          {/* good */}
           <Fade className="border border-spark/20 bg-void-2 lg:border-none lg:bg-void-2" delay={0.15}>
             <div className="h-full p-8 lg:p-10">
               <p className="mb-6 font-mono text-[11px] uppercase tracking-[0.2em] text-spark">What the skill writes</p>
@@ -461,9 +547,10 @@ function Footer() {
 
 /* ── root ── */
 export default function App() {
+  const { dark, toggle } = useTheme();
   return (
     <div className="relative min-h-screen">
-      <Nav />
+      <Nav dark={dark} onToggle={toggle} />
       <main>
         <Hero />
         <Ticker />

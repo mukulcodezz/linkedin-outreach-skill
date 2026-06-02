@@ -1,0 +1,12 @@
+# OS / editor junk
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+.idea/
+.vscode/
+
+# --- Privacy ---
+# Uncomment these in a PUBLIC fork so you don't commit private data:
+# config.md          # your filled business profile
+# logs/sent_log.md   # your prospect tracker (contains names/PII)

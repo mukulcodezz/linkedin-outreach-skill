@@ -6,6 +6,12 @@ desktop.ini
 .idea/
 .vscode/
 
+# Node / build (landing page source in site/; built output in docs/ IS committed)
+node_modules/
+site/node_modules/
+*.tsbuildinfo
+site/dist/
+
 # --- Privacy ---
 # Uncomment these in a PUBLIC fork so you don't commit private data:
 # config.md          # your filled business profile

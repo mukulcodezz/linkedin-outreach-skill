@@ -1,5 +1,7 @@
 # LinkedIn Outreach Skill
 
+**🌐 Live page: https://mukulcodezz.github.io/linkedin-outreach-skill/**
+
 A [Claude](https://claude.com/claude-code) Agent Skill that turns LinkedIn profile screenshots into **personalized, scored, nurture-first outreach** — for any business. Fill one config file with your company info and it works for your industry.
 
 It thinks like a good networker, not a spam bot. The north star is **Reply Rate > Meetings > Sales > Messages Sent** — so the default first message never pitches.
